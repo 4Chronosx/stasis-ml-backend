@@ -1,5 +1,7 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 flask
+flask-socketio
+python-socketio
 ultralytics
 opencv-python-headless
 numpy
@@ -8,3 +10,4 @@ torch
 torchvision
 Flask-Cors
 gunicorn
+eventlet

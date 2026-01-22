@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, Response, jsonify
+from flask_socketio import SocketIO, emit
 from ultralytics import YOLO
 from PIL import Image
 import os
@@ -13,6 +14,14 @@ from io import BytesIO
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Initialize SocketIO with CORS support
+socketio = SocketIO(app, 
+                    cors_allowed_origins="*",
+                    async_mode='threading',
+                    ping_timeout=60,
+                    ping_interval=25)
 
 # CORS configuration - allow all origins for API endpoints
 CORS(app, 
@@ -40,6 +49,63 @@ def get_emoji_path(emotion):
     elif os.path.exists(jpg_path):
         return jpg_path
     return None
+
+# ============================================
+# WEBSOCKET EVENTS
+# ============================================
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle client connection"""
+    print('Client connected')
+    emit('connection_response', {'status': 'connected', 'message': 'WebSocket connection established'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client disconnection"""
+    print('Client disconnected')
+
+@socketio.on('analyze_frame')
+def handle_analyze_frame(data):
+    """Handle frame analysis via WebSocket - more efficient than HTTP polling"""
+    try:
+        if not data or 'image' not in data:
+            emit('analysis_error', {'error': 'No image data provided'})
+            return
+        
+        # Decode base64 image
+        image_data = data['image']
+        if ',' in image_data:
+            image_data = image_data.split(',')[1]  # Remove data:image/jpeg;base64, prefix
+        
+        image_bytes = base64.b64decode(image_data)
+        image = Image.open(BytesIO(image_bytes))
+        
+        # Convert PIL image to numpy array for YOLO
+        image_np = np.array(image)
+        
+        # Run emotion detection
+        results = model(image_np)
+        
+        emotion = None
+        confidence = 0.0
+        
+        if results and results[0].boxes and len(results[0].boxes.cls) > 0:
+            pred_idx = int(results[0].boxes.cls[0])
+            emotion = model.names[pred_idx]
+            confidence = float(results[0].boxes.conf[0]) if len(results[0].boxes.conf) > 0 else 0.0
+        
+        # Send result back to client
+        emit('analysis_result', {
+            'emotion': emotion,
+            'confidence': confidence,
+            'emoji_path': get_emoji_path(emotion) if emotion else None,
+            'timestamp': time.time()
+        })
+    
+    except Exception as e:
+        print(f"Error in frame analysis: {str(e)}")
+        emit('analysis_error', {'error': str(e)})
 
 @app.route('/analyze_frame', methods=['POST', 'OPTIONS'])
 def analyze_frame():
@@ -165,4 +231,5 @@ def test_model():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV', 'production') != 'production'
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    # Use socketio.run instead of app.run for WebSocket support
+    socketio.run(app, host='0.0.0.0', port=port, debug=debug, allow_unsafe_werkzeug=True)
