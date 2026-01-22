@@ -154,79 +154,12 @@ def analyze_frame():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
-    emotion = None
-    emoji_path = None
-    uploaded_path = None
-    show_text = False
+    return jsonify({"status": "API running"})
 
-    if request.method == 'POST':
-        file = request.files.get('image')
-        if file:
-            filename = f'{uuid.uuid4()}.jpg'
-            uploaded_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(uploaded_path)
 
-            results = model(uploaded_path)
-            if results and results[0].boxes and len(results[0].boxes.cls) > 0:
-                pred_idx = int(results[0].boxes.cls[0])
-                emotion = model.names[pred_idx]
-                emoji_path = get_emoji_path(emotion)
-                if not emoji_path:
-                    show_text = True
 
-    return render_template('index.html',
-                           emotion=emotion,
-                           emoji_path=emoji_path,
-                           uploaded_path=uploaded_path,
-                           show_text=show_text)
-
-# ============================================
-# DEVELOPMENT / DEBUG ROUTES (localhost only)
-# ============================================
-
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint for monitoring"""
-    return jsonify({
-        'status': 'healthy',
-        'model_loaded': model is not None,
-        'timestamp': time.time()
-    })
-
-@app.route('/api/info', methods=['GET'])
-def api_info():
-    """API information endpoint"""
-    return jsonify({
-        'version': '1.0.0',
-        'endpoints': {
-            'analyze_frame': '/analyze_frame (POST) - Analyze base64 image',
-            'upload': '/ (POST) - Upload image file',
-            'health': '/health (GET) - Health check',
-            'test': '/test (GET) - Test model with sample'
-        },
-        'model': 'YOLO face_emotion_recognition',
-        'emotions': list(model.names.values()) if model else []
-    })
-
-@app.route('/test', methods=['GET'])
-def test_model():
-    """Test endpoint to verify model is working"""
-    try:
-        # Create a simple test image (black square)
-        test_image = np.zeros((224, 224, 3), dtype=np.uint8)
-        results = model(test_image)
-        return jsonify({
-            'status': 'success',
-            'message': 'Model is working',
-            'model_classes': list(model.names.values())
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': str(e)
-        }), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
