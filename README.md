@@ -1,33 +1,36 @@
-# Facial Expression Recognition System - Sure Trust 😊
+# Stasis - Backend (ML) 🧠
 
 ![Facial Expression Recognition](https://img.shields.io/badge/Facial%20Expression%20Recognition-Open%20Source-brightgreen)
 
-Welcome to the **Facial Expression Recognition System** repository! This project harnesses the power of YOLOv9 and Flask to detect emotions in images and live camera feeds. It identifies five emotions: Angry, Happy, Natural, Sad, and Surprised, achieving a mean Average Precision (mAP50) of 0.731. The system features a user-friendly web interface that supports file uploads, real-time processing, and emoji feedback.
+This repository contains the **backend machine learning component** for **Stasis**, a learning application that leverages computer vision and AI to enhance productivity. This backend service provides facial expression recognition capabilities using YOLOv9 and Flask, detecting emotions in images and live camera feeds. It identifies five emotions: Angry, Happy, Natural, Sad, and Surprised, achieving a mean Average Precision (mAP50) of 0.731.
+
+## Credits
+
+This project is based on the original work by [Bananacat123-hue](https://github.com/Bananacat123-hue) from the [Facial Expression Recognition - Sure Trust](https://github.com/Bananacat123-hue/Facial_Expression_Recognition-Sure_Trust-) repository. Special thanks to the original author for their excellent implementation and contribution to the open-source community.
 
 ## Table of Contents
 
+- [Credits](#credits)
 - [Project Overview](#project-overview)
 - [Features](#features)
 - [Technologies Used](#technologies-used)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Demo](#demo)
 - [Contributing](#contributing)
 - [License](#license)
-- [Contact](#contact)
-- [Releases](#releases)
 
 ## Project Overview
 
-Facial expressions are a vital part of human communication. This project aims to develop a system that can recognize and interpret these expressions. Using deep learning techniques, we built a model that can classify emotions from facial images. This technology has applications in Human-Computer Interaction (HCI), emotion analysis, and more.
+This repository serves as the machine learning backend for Stasis, a learning application designed to boost productivity through AI-powered features. This component specifically handles the computer vision and facial expression recognition functionality using deep learning techniques to classify emotions from facial images. The backend provides REST API endpoints that the main Stasis application can integrate with for emotion detection capabilities.
 
 ## Features
 
-- **Emotion Detection**: Accurately detects five emotions from images and live video feeds.
-- **Web Interface**: Easy-to-use interface for uploading images and viewing results.
-- **Real-Time Processing**: Analyze live camera input for immediate feedback.
+- **Emotion Detection API**: Backend service that accurately detects five emotions from images and live video feeds.
+- **Flask REST API**: Provides endpoints for integration with the main Stasis application.
+- **Real-Time Processing**: Analyzes live camera input for immediate emotion feedback.
+- **Image Upload Support**: Processes uploaded images and returns emotion classification results.
 - **Emoji Feedback**: Provides emoji suggestions based on detected emotions.
-- **Open Source**: Contribute to the project and improve the system.
+- **YOLOv9 Model**: Uses state-of-the-art object detection for accurate emotion recognition.
 
 ## Technologies Used
 
@@ -43,18 +46,18 @@ This project utilizes the following technologies:
 
 ## Installation
 
-To get started with this project, follow these steps:
+To set up the backend ML service locally, follow these steps:
 
 1. **Clone the Repository**:
 
    ```bash
-   git clone https://github.com/Bananacat123-hue/Facial_Expression_Recognition-Sure_Trust-.git
+   git clone <your-repository-url>
    ```
 
 2. **Navigate to the Project Directory**:
 
    ```bash
-   cd Facial_Expression_Recognition-Sure_Trust-
+   cd stasis
    ```
 
 3. **Install Required Packages**:
@@ -79,21 +82,16 @@ To get started with this project, follow these steps:
 
 ## Usage
 
-Once the application is running, you can use it in the following ways:
+Once the backend service is running, it provides API endpoints that can be accessed by the main Stasis application:
 
-1. **Upload an Image**: Click on the upload button to select an image file from your device. The system will analyze the image and display the detected emotion.
+1. **Image Upload Endpoint**: Send images to the API for emotion detection analysis.
 
-2. **Use the Live Camera**: Allow the application to access your camera. It will process the video feed in real-time and show the detected emotions as you move.
+2. **Live Camera Processing**: Stream video data to the backend for real-time emotion recognition.
 
-3. **View Emoji Feedback**: Based on the detected emotion, the application will display an appropriate emoji for quick feedback.
+3. **Emoji Feedback**: Receive emotion classifications along with appropriate emoji suggestions.
 
-## Demo
+The backend service runs on `http://127.0.0.1:5000` by default and can be integrated with the main Stasis application.
 
-Here’s a brief demonstration of how the application works:
-
-![Demo](https://img.shields.io/badge/Demo-Click%20Here-brightblue)
-
-You can find the latest releases and updates [here](https://github.com/Bananacat123-hue/Facial_Expression_Recognition-Sure_Trust-/releases).
 
 ## Contributing
 
@@ -127,15 +125,6 @@ We welcome contributions to improve this project. Here’s how you can help:
 
 This project is licensed under the MIT License. Feel free to use, modify, and distribute this software.
 
-## Contact
+---
 
-For questions or feedback, you can reach out to the project maintainer:
-
-- **Email**: your-email@example.com
-- **GitHub**: [Bananacat123-hue](https://github.com/Bananacat123-hue)
-
-## Releases
-
-For the latest updates and downloadable files, visit the [Releases section](https://github.com/Bananacat123-hue/Facial_Expression_Recognition-Sure_Trust-/releases). 
-
-Thank you for your interest in the Facial Expression Recognition System! We hope you find it useful for your projects and research. Your contributions and feedback are always welcome.
+Thank you for your interest in Stasis! This project builds upon the excellent work of the original author. Your contributions and feedback are always welcome.
