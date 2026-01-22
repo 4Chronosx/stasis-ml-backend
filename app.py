@@ -14,7 +14,17 @@ from io import BytesIO
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-CORS(app)  # Enable CORS for all routes
+
+# CORS configuration - allow localhost for development
+CORS(app, origins=[
+    'http://localhost:3000',      # Next.js dev server
+    'http://127.0.0.1:3000',
+    'http://localhost:5173',      # Vite dev server
+    'http://127.0.0.1:5173',
+    'http://localhost:5000',      # Flask self
+    'http://127.0.0.1:5000',
+    os.environ.get('FRONTEND_URL', '')  # Production frontend URL
+])
 
 
 model = YOLO('model/face_emotion_recognition.pt')
@@ -94,6 +104,52 @@ def index():
                            emoji_path=emoji_path,
                            uploaded_path=uploaded_path,
                            show_text=show_text)
+
+# ============================================
+# DEVELOPMENT / DEBUG ROUTES (localhost only)
+# ============================================
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'model_loaded': model is not None,
+        'timestamp': time.time()
+    })
+
+@app.route('/api/info', methods=['GET'])
+def api_info():
+    """API information endpoint"""
+    return jsonify({
+        'version': '1.0.0',
+        'endpoints': {
+            'analyze_frame': '/analyze_frame (POST) - Analyze base64 image',
+            'upload': '/ (POST) - Upload image file',
+            'health': '/health (GET) - Health check',
+            'test': '/test (GET) - Test model with sample'
+        },
+        'model': 'YOLO face_emotion_recognition',
+        'emotions': list(model.names.values()) if model else []
+    })
+
+@app.route('/test', methods=['GET'])
+def test_model():
+    """Test endpoint to verify model is working"""
+    try:
+        # Create a simple test image (black square)
+        test_image = np.zeros((224, 224, 3), dtype=np.uint8)
+        results = model(test_image)
+        return jsonify({
+            'status': 'success',
+            'message': 'Model is working',
+            'model_classes': list(model.names.values())
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
