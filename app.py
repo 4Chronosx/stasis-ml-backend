@@ -16,10 +16,18 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 # CORS configuration - allow all origins for API endpoints
 CORS(app, 
-     origins='*',
-     allow_headers=['Content-Type', 'Authorization'],
+     resources={r"/*": {"origins": "*"}},
+     allow_headers=['Content-Type', 'Authorization', 'Accept'],
      methods=['GET', 'POST', 'OPTIONS'],
      supports_credentials=False)
+
+# Ensure CORS headers are added to all responses
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    return response
 
 
 model = YOLO('model/face_emotion_recognition.pt')
