@@ -15,16 +15,12 @@ from io import BytesIO
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
-# CORS configuration - allow localhost for development
-CORS(app, origins=[
-    'http://localhost:3000',      # Next.js dev server
-    'http://127.0.0.1:3000',
-    'http://localhost:5173',      # Vite dev server
-    'http://127.0.0.1:5173',
-    'http://localhost:5000',      # Flask self
-    'http://127.0.0.1:5000',
-    os.environ.get('FRONTEND_URL', '')  # Production frontend URL
-])
+# CORS configuration - allow all origins for API endpoints
+CORS(app, 
+     origins='*',
+     allow_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'OPTIONS'],
+     supports_credentials=False)
 
 
 model = YOLO('model/face_emotion_recognition.pt')
@@ -38,9 +34,17 @@ def get_emoji_path(emotion):
         return jpg_path
     return None
 
-@app.route('/analyze_frame', methods=['POST'])
+@app.route('/analyze_frame', methods=['POST', 'OPTIONS'])
 def analyze_frame():
     """Analyze a base64-encoded image frame from client-side webcam"""
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        return response
+    
     try:
         data = request.get_json()
         if not data or 'image' not in data:
