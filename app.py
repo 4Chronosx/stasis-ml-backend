@@ -3,7 +3,6 @@ from ultralytics import YOLO
 from PIL import Image
 import os
 import uuid
-import cv2
 from flask_cors import CORS
 import time
 import base64
