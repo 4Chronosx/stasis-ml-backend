@@ -6,6 +6,9 @@ import uuid
 import cv2
 from flask_cors import CORS
 import time
+import base64
+import numpy as np
+from io import BytesIO
 
 
 
@@ -15,49 +18,84 @@ CORS(app)  # Enable CORS for all routes
 
 
 model = YOLO('model/face_emotion_recognition.pt')
-camera = None
-current_emotion = {"label": None, "timestamp": None}
 
-def gen_frames():
-    global camera, current_emotion
-    if camera is None:
-        camera = cv2.VideoCapture(0)
+def get_emoji_path(emotion):
+    jpeg_path = f'static/emojis/{emotion}.jpeg'
+    jpg_path = f'static/emojis/{emotion}.jpg'
+    if os.path.exists(jpeg_path):
+        return jpeg_path
+    elif os.path.exists(jpg_path):
+        return jpg_path
+    return None
 
-    while True:
-        success, frame = camera.read()
-        if not success:
-            break
-
-        frame = cv2.flip(frame, 1)
-
-        results = model(frame)
+@app.route('/analyze_frame', methods=['POST'])
+def analyze_frame():
+    """Analyze a base64-encoded image frame from client-side webcam"""
+    try:
+        data = request.get_json()
+        if not data or 'image' not in data:
+            return jsonify({'error': 'No image data provided'}), 400
+        
+        # Decode base64 image
+        image_data = data['image']
+        if ',' in image_data:
+            image_data = image_data.split(',')[1]  # Remove data:image/jpeg;base64, prefix
+        
+        image_bytes = base64.b64decode(image_data)
+        image = Image.open(BytesIO(image_bytes))
+        
+        # Convert PIL image to numpy array for YOLO
+        image_np = np.array(image)
+        
+        # Run emotion detection
+        results = model(image_np)
+        
+        emotion = None
+        confidence = 0.0
+        
         if results and results[0].boxes and len(results[0].boxes.cls) > 0:
             pred_idx = int(results[0].boxes.cls[0])
-            label = model.names[pred_idx]
-            current_emotion["label"] = label
-            current_emotion["timestamp"] = time.time()
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame_bytes = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            emotion = model.names[pred_idx]
+            confidence = float(results[0].boxes.conf[0]) if len(results[0].boxes.conf) > 0 else 0.0
+        
+        return jsonify({
+            'emotion': emotion,
+            'confidence': confidence,
+            'emoji_path': get_emoji_path(emotion) if emotion else None
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_frames(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    emotion = None
+    emoji_path = None
+    uploaded_path = None
+    show_text = False
 
-@app.route('/current_emotion')
-def get_current_emotion():
-    return jsonify(current_emotion)
+    if request.method == 'POST':
+        file = request.files.get('image')
+        if file:
+            filename = f'{uuid.uuid4()}.jpg'
+            uploaded_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(uploaded_path)
 
-@app.route('/shutdown_camera')
-def shutdown_camera():
-    global camera
-    if camera:
-        camera.release()
-        camera = None
-    return "Camera released"
+            results = model(uploaded_path)
+            if results and results[0].boxes and len(results[0].boxes.cls) > 0:
+                pred_idx = int(results[0].boxes.cls[0])
+                emotion = model.names[pred_idx]
+                emoji_path = get_emoji_path(emotion)
+                if not emoji_path:
+                    show_text = True
+
+    return render_template('index.html',
+                           emotion=emotion,
+                           emoji_path=emoji_path,
+                           uploaded_path=uploaded_path,
+                           show_text=show_text)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    debug = os.environ.get('FLASK_ENV', 'production') != 'production'
+    app.run(host='0.0.0.0', port=port, debug=debug)

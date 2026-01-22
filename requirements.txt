@@ -1,9 +1,10 @@
 flask
 ultralytics
-opencv-python
+opencv-python-headless
 numpy
 pillow
 torch
 torchvision
 torchaudio
 Flask-Cors
+gunicorn
